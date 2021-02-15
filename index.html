@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-<!--
+  <!--
   <meta name="description" content="" />
   <meta name="keywords" content="" />
 -->
@@ -15,9 +15,16 @@
 
   <link href="https://fonts.googleapis.com/css?family=M+PLUS+1p|Montserrat&display=swap" rel="stylesheet">
 
+  <!-- https://fontawesome.com/icons?d=gallery -->
+  <!--<script src="/scripts/all.js"></script> -->
+
   <style>
     * {
       font-family: 'M PLUS 1p', sans-serif;
+    }
+
+    ul>a {
+      font-size: 5em;
     }
 
     .top {
@@ -47,56 +54,67 @@
     .top-5 {
       background-color: red;
     }
+
+    .current-view {
+      color: black;
+    }
   </style>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JP93TRQW1P"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-JP93TRQW1P');
+  </script>
+
 </head>
 
 <body>
   <div id="vue-main" class="container-fluid">
-    <!-- menu bar -->
+
+    <!-- menu -->
     <div class="row justify-content-center mx-auto">
-      <div class="col-lg-2 top top-1" v-on:click="state='live'">
+      <div class="col-lg-2 top top-1" v-on:click="state='live'" :class="state=='live' ? 'current-view' : '' ">
         <h1>LIVE</h1>
       </div>
-      <div class="col-lg-2 top top-2" v-on:click="state='upcoming'">
+      <div class="col-lg-2 top top-2" v-on:click="state='upcoming'" :class="state=='upcoming' ? 'current-view' : '' ">
         <h1>UPCOMING</h1>
       </div>
-      <div class="col-lg-2 top top-3" v-on:click="state='record'">
+      <div class="col-lg-2 top top-3" v-on:click="state='record'" :class="state=='record' ? 'current-view' : '' ">
         <h1>RECORD</h1>
       </div>
-      <div class="col-lg-2 top top-4" v-on:click="state='member'">
+      <div class="col-lg-2 top top-4" v-on:click="state='member'" :class="state=='member' ? 'current-view' : '' ">
         <h1>MEMBER</h1>
       </div>
-      <div class="col-lg-2 top top-5" v-on:click="state='about'">
-        <h1>ABOUT</h1>
+      <div class="col-lg-2 top top-5" v-on:click="state='about'" :class="state=='about' ? 'current-view' : '' ">
+        <h1>REPORT</h1>
       </div>
+    </div>
+
+    <!-- update time -->
+    <div class="row justify-content-md-center" style="padding-top: 1em;"
+      v-if="state != 'detail' && state != 'channel_detail'">
+      <span style="margin-left: 1em;" v-if="state != 'member'" class="badge badge-info">{{ new
+        Date(video_list.timestamp).toLocaleString() }}</span>
+      <span style="margin-left: 1em;" v-if="state == 'member'" class="badge badge-info">{{ "Every Day 12:00:00+08:00"
+        }}</span>
     </div>
 
     <hr />
 
-    <!-- update time -->
-    <div class="row mx-auto">
-      <div class="col col-lg-4">
-        <h2 v-if="state == 'live'">LIVE</h2>
-        <h2 v-if="state == 'upcoming'">UPCOMING</h2>
-        <h2 v-if="state == 'record'">RECORD</h2>
-        <h2 v-if="state == 'member'">MEMBER</h2>
-        <h2 v-if="state == 'about'">ABOUT</h2>
-
-        <div class="row" v-if="state != 'detail' && state != 'channel_detail'">
-          <span style="margin-left: 1em;" v-if="state != 'member'"
-            class="badge badge-info">{{ new Date(video_list.timestamp).toLocaleString() }}</span>
-            <span style="margin-left: 1em;" v-if="state == 'member'"
-            class="badge badge-info">{{ "Every Day 12:00:00+08:00" }}</span>
-        </div>
-      </div>
-    </div>
-
     <!-- search keyword input -->
-    <div v-if="state != 'detail' && state != 'about' " class="form-group row justify-content-md-center ">
+    <div v-if="state != 'detail' && state != 'channel_detail' && state != 'about' "
+      class="form-group row justify-content-md-center ">
       <div class="col col-lg-4">
-        <input class="form-control form-control-lg" type="text" placeholder="keyword" v-model="keyword">
+        <input class="form-control form-control-lg" type="text" placeholder="video_id , channel_id , word"
+          v-model="keyword">
       </div>
+      <!--<i class="far fa-comment-alt fa-3x"></i>-->
     </div>
+
     <hr />
 
     <!-- live block -->
@@ -106,27 +124,36 @@
           <tr>
             <th class="" scope="col">Channel</th>
             <th class="" scope="col">Title</th>
-            <th class="" scope="col" v-on:click="live_sort='play_time'">Duration</th>
-            <th style="text-align: right;" scope="col" v-on:click="live_sort='online'">Online</th>
-            <th style="text-align: right;" scope="col" v-on:click="live_sort='view'">View</th>
-            <th style="text-align: right;" scope="col" v-on:click="live_sort='like'">Like</th>
-            <th style="text-align: right;" scope="col" v-on:click="live_sort='dislike'">Dislike</th>
-            <th style="text-align: right;" scope="col" v-on:click="live_sort='chat'">Messages</th>
-            <th style="text-align: right;" scope="col" v-on:click="live_sort='sponsor'">Member</th>
-            <th style="text-align: right;" scope="col" v-on:click="live_sort='superchat'">SuperChat</th>
+            <th class="" scope="col" v-on:click="live_sort='play_time'">Duration {{ live_sort == "play_time" ? "▼" : ""
+              }}</th>
+            <th style="text-align: right;" scope="col" v-on:click="live_sort='online'">Online {{ live_sort == "online" ?
+              "▼" : "" }}</th>
+            <th style="text-align: right;" scope="col" v-on:click="live_sort='view'">View {{ live_sort == "view" ? "▼" :
+              "" }}</th>
+            <th style="text-align: right;" scope="col" v-on:click="live_sort='like'">Like {{ live_sort == "like" ? "▼" :
+              "" }}</th>
+            <th style="text-align: right;" scope="col" v-on:click="live_sort='dislike'">Dislike {{ live_sort ==
+              "dislike" ? "▼" : "" }}</th>
+            <th style="text-align: right;" scope="col" v-on:click="live_sort='chat'">Messages {{ live_sort == "chat" ?
+              "▼" : "" }}</th>
+            <th style="text-align: right;" scope="col" v-on:click="live_sort='sponsor'">Member {{ live_sort == "sponsor"
+              ? "▼" : "" }}</th>
+            <th style="text-align: right;" scope="col" v-on:click="live_sort='superchat'">SuperChat {{ live_sort ==
+              "superchat" ? "▼" : "" }}</th>
           </tr>
         </thead>
         <tbody>
           <tr class="table-dark" v-for="item in live_list">
-            <td><a target="_blank"
-                v-bind:href="'https://www.youtube.com/channel/'+item.channel_id">{{ item.channel_title }}</a></td>
+            <td><a target="_blank" v-bind:href="'https://www.youtube.com/channel/'+item.channel_id">{{
+                item.channel_title }}</a></td>
             <td><a target="_blank" v-bind:href="'https://www.youtube.com/watch?v='+item.id">{{ item.title }}</a></td>
             <td>{{ getNewPlayTime(item.play_time) }}</td>
             <td style="text-align: right;">{{ getNumberWithCommas(item.live_view_count) }}</td>
             <td style="text-align: right;">{{ getNumberWithCommas(item.view_count) }}</td>
             <td style="text-align: right;">{{ getNumberWithCommas(item.like_count) }}</td>
             <td style="text-align: right;">{{ getNumberWithCommas(item.dislike_count) }}</td>
-            <td style="text-align: right;">{{ getNumberWithCommas(item.chat_total) + " [+" + getNumberWithCommas(item.chat) + "]" }}</td>
+            <td style="text-align: right;">
+              {{ getNumberWithCommas(item.chat_total) + " [+" + getNumberWithCommas(item.chat) + "]" }}</td>
             <td style="text-align: right;">{{ "+ " + getNumberWithCommas(item.new_sponsor) }}</td>
             <td style="text-align: right;">{{ "¥ " + getNumberWithCommas(item.amount_micros) }}</td>
           </tr>
@@ -148,8 +175,8 @@
         </thead>
         <tbody>
           <tr class="table-dark" v-for="item in upcoming_list">
-            <td><a target="_blank"
-                v-bind:href="'https://www.youtube.com/channel/'+item.channel_id">{{ item.channel_title }}</a></td>
+            <td><a target="_blank" v-bind:href="'https://www.youtube.com/channel/'+item.channel_id">{{
+                item.channel_title }}</a></td>
             <td><a target="_blank" v-bind:href="'https://www.youtube.com/watch?v='+item.id">{{ item.title }}</a></td>
             <td>{{ new Date(item.live_sch_time).toLocaleString() }}</td>
             <td style="text-align: right;">{{ getNumberWithCommas(item.like_count) }}</td>
@@ -166,17 +193,21 @@
           <tr>
             <th class="" scope="col">Channel</th>
             <th class="" scope="col">Title</th>
-            <th class="" scope="col" v-on:click="record_sort='start_time'">Start Time</th>
+            <th class="" scope="col" v-on:click="record_sort='start_time'">Start Time {{ record_sort == "start_time" ?
+              "▼" : "" }}</th>
             <th scope="col" v-on:click="record_sort='play_time'">Duration</th>
-            <th style="text-align: right;" scope="col" v-on:click="record_sort='chat'">Messages</th>
-            <th style="text-align: right;" scope="col" v-on:click="record_sort='sponsor'">Member</th>
-            <th style="text-align: right;" scope="col" v-on:click="record_sort='superchat'">SuperChat</th>
+            <th style="text-align: right;" scope="col" v-on:click="record_sort='chat'">Messages {{ record_sort == "chat"
+              ? "▼" : "" }}</th>
+            <th style="text-align: right;" scope="col" v-on:click="record_sort='sponsor'">Member {{ record_sort ==
+              "sponsor" ? "▼" : "" }}</th>
+            <th style="text-align: right;" scope="col" v-on:click="record_sort='superchat'">SuperChat {{ record_sort ==
+              "superchat" ? "▼" : "" }}</th>
           </tr>
         </thead>
         <tbody>
           <tr class="table-dark" v-for="item in record_list" v-on:click="onClickDetail(item.id);">
-            <td><a target="_blank"
-                v-bind:href="'https://www.youtube.com/channel/'+item.channel_id">{{ item.channel_title }}</a></td>
+            <td><a target="_blank" v-bind:href="'https://www.youtube.com/channel/'+item.channel_id">{{
+                item.channel_title }}</a></td>
             <td><a target="_blank" v-bind:href="'https://www.youtube.com/watch?v='+item.id">{{ item.title }}</a></td>
             <td>{{ new Date(item.live_start_time).toLocaleString() }}</td>
             <td>{{ getNewPlayTime(item.play_time) }}</td>
@@ -194,46 +225,56 @@
         <thead>
           <tr>
             <th scope="col">Channel</th>
-            <th style="text-align: right;" scope="col" v-on:click="member_sort='view_count'">View Count</th>
-            <th style="text-align: right;" scope="col" v-on:click="member_sort='sub_count'">Subscriber Count</th>
-            <th style="text-align: right;" scope="col" v-on:click="member_sort='video_count'">Video Count</th>
+            <th style="text-align: right;" scope="col" v-on:click="member_sort='view_count'">View Count {{ member_sort
+              == "view_count" ? "▼" : "" }}</th>
+            <th style="text-align: right;" scope="col" v-on:click="member_sort='sub_count'">Subscriber Count {{
+              member_sort == "sub_count" ? "▼" : "" }}</th>
+            <th style="text-align: right;" scope="col" v-on:click="member_sort='video_count'">Video Count {{ member_sort
+              == "video_count" ? "▼" : "" }}</th>
             <th style="text-align: right;" title="This Month" scope="col" v-on:click="member_sort='total_time'">Total
-              Time※</th>
+              Time {{ member_sort == "total_time" ? "▼" : "" }} ※</th>
             <th style="text-align: right;" title="This Month" scope="col" v-on:click="member_sort='total_message'">Total
-              Message※</th>
+              Message {{ member_sort == "total_message" ? "▼" : "" }} ※</th>
             <th style="text-align: right;" title="This Month" scope="col" v-on:click="member_sort='total_new_member'">
-              Total New Member※</th>
+              Total New Member {{ member_sort == "total_new_member" ? "▼" : "" }} ※</th>
             <th style="text-align: right;" title="This Month" scope="col" v-on:click="member_sort='sc_total'">Total
-              SuperChat※</th>
+              SuperChat {{ member_sort == "sc_total" ? "▼" : "" }} ※</th>
           </tr>
         </thead>
         <tbody>
           <tr class="table-dark" v-for="item in channel_list"
             v-on:click="onClickChannelDetail(item.channel_id,item.channel_name);">
-            <td><a target="_blank"
-                v-bind:href="'https://www.youtube.com/channel/'+item.channel_id">{{ item.channel_name }}</a></td>
+            <td><a target="_blank" v-bind:href="'https://www.youtube.com/channel/'+item.channel_id">{{ item.channel_name
+                }}</a></td>
             <td style="text-align: right;" title="總計(當日總計-前日總計)">
-              {{ getNumberWithCommas(item.view_count) + " (" + (item.view_count_diff != 0 ? getNumberWithCommas(item.view_count_diff) : "±0") + ")" }}
+              {{ getNumberWithCommas(item.view_count) + " (" + (item.view_count_diff != 0 ?
+              getNumberWithCommas(item.view_count_diff) : "±0") + ")" }}
             </td>
             <td style="text-align: right;" title="總計(當日總計-前日總計)">
-              {{ getNumberWithCommas(item.sub_count) + " (" + (item.sub_count_diff != 0 ? getNumberWithCommas(item.sub_count_diff) : "±0") + ")" }}
+              {{ getNumberWithCommas(item.sub_count) + " (" + (item.sub_count_diff != 0 ?
+              getNumberWithCommas(item.sub_count_diff) : "±0") + ")" }}
             </td>
             <td style="text-align: right;" title="總計(當日總計-前日總計)">
-              {{ getNumberWithCommas(item.video_count) + " (" + (item.video_count_diff != 0 ? getNumberWithCommas(item.video_count_diff) : "±0") + ")" }}
-            </td>
-
-            <td style="text-align: right;" title="總計(當日總計-前日總計)">
-              {{ getPlayTimeFromSec(item.play_time_num) + " (" + (item.play_time_num_diff != 0 ? getPlayTimeFromSec(item.play_time_num_diff) : "±0") + ")" }}
-            </td>
-            <td style="text-align: right;" title="總計(當日總計-前日總計)">
-              {{ getNumberWithCommas(item.message_count) + " (" + (item.message_count_diff != 0 ? getNumberWithCommas(item.message_count_diff) : "±0") + ")" }}
-            </td>
-            <td style="text-align: right;" title="總計(當日總計-前日總計)">
-              {{ getNumberWithCommas(item.new_member_count) + " (" + (item.new_member_count_diff != 0 ? getNumberWithCommas(item.new_member_count_diff) : "±0") + ")" }}
+              {{ getNumberWithCommas(item.video_count) + " (" + (item.video_count_diff != 0 ?
+              getNumberWithCommas(item.video_count_diff) : "±0") + ")" }}
             </td>
 
             <td style="text-align: right;" title="總計(當日總計-前日總計)">
-              {{ getNumberWithCommas(item.sc_total) + " (" + (item.sc_total_diff != 0 ? getNumberWithCommas(item.sc_total_diff) : "±0") + ")" }}
+              {{ getPlayTimeFromSec(item.play_time_num) + " (" + (item.play_time_num_diff != 0 ?
+              getPlayTimeFromSec(item.play_time_num_diff) : "±0") + ")" }}
+            </td>
+            <td style="text-align: right;" title="總計(當日總計-前日總計)">
+              {{ getNumberWithCommas(item.message_count) + " (" + (item.message_count_diff != 0 ?
+              getNumberWithCommas(item.message_count_diff) : "±0") + ")" }}
+            </td>
+            <td style="text-align: right;" title="總計(當日總計-前日總計)">
+              {{ getNumberWithCommas(item.new_member_count) + " (" + (item.new_member_count_diff != 0 ?
+              getNumberWithCommas(item.new_member_count_diff) : "±0") + ")" }}
+            </td>
+
+            <td style="text-align: right;" title="總計(當日總計-前日總計)">
+              {{ getNumberWithCommas(item.sc_total) + " (" + (item.sc_total_diff != 0 ?
+              getNumberWithCommas(item.sc_total_diff) : "±0") + ")" }}
             </td>
           </tr>
         </tbody>
@@ -244,13 +285,13 @@
     <div class="row justify-content-center mx-auto" v-if="state == 'detail'">
       <!-- video title and channel title -->
       <div class="row justify-content-center mx-auto col-xl-12">
-        <h1> <a target="_blank"
-            v-bind:href="'https://www.youtube.com/watch?v='+detail_id+'&t='+detail_sec">{{ detail_info.video_title }}</a>
+        <h1> <a target="_blank" v-bind:href="'https://www.youtube.com/watch?v='+detail_id+'&t='+detail_sec">{{
+            detail_info.video_title }}</a>
         </h1>
       </div>
       <div class="row justify-content-center mx-auto col-xl-12">
-        <h3> <a target="_blank"
-            v-bind:href="'https://www.youtube.com/channel/'+detail_info.channel_id">{{ detail_info.channel_title }}</a>
+        <h3> <a target="_blank" v-bind:href="'https://www.youtube.com/channel/'+detail_info.channel_id">{{
+            detail_info.channel_title }}</a>
         </h3>
       </div>
 
@@ -273,28 +314,25 @@
               <td>{{ new Date(detail_info.start_time).toLocaleString() }}</td>
               <td>{{ new Date(detail_info.end_time).toLocaleString() }} </td>
               <td>
-                {{ getNewPlayTime( detail_info.duration.replace("PT","").replace("H",":").replace("M",":").replace("S","") ) }}
+                {{ getNewPlayTime(
+                detail_info.duration.replace("PT","").replace("H",":").replace("M",":").replace("S","") ) }}
               </td>
               <td style="text-align: right;">
-                {{ getNumberWithCommas(detail_info.reports.totals.total_messages_user + detail_info.reports.totals.total_messages_member + detail_info.reports.totals.total_messages_marker + detail_info.reports.totals.total_messages_mm) }}
+                {{ getNumberWithCommas(detail_info.reports.totals.total_messages_user +
+                detail_info.reports.totals.total_messages_member + detail_info.reports.totals.total_messages_marker +
+                detail_info.reports.totals.total_messages_mm) }}
               </td>
               <td style="text-align: right;">
-                {{ getNumberWithCommas(detail_info.reports.totals.total_sc_user + detail_info.reports.totals.total_sc_member + detail_info.reports.totals.total_sc_marker + detail_info.reports.totals.total_sc_mm) }}
-              </td> 
+                {{ getNumberWithCommas(detail_info.reports.totals.total_sc_user +
+                detail_info.reports.totals.total_sc_member + detail_info.reports.totals.total_sc_marker +
+                detail_info.reports.totals.total_sc_mm) }}
+              </td>
               <td style="text-align: right;">{{ getNumberWithCommas(detail_info.reports.totals.total_new_member) }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- like chart -->
-      <!--
-      <div class="row col-xl-4 justify-content-center mx-auto" style="margin-top: 5em;">
-        <h2>Like / Dislike</h2>
-        <canvas id="canvas_ld" style="width:100%;height:300px;">
-        </canvas>
-      </div>
--->
       <!-- talker chart -->
       <div class="row col-xl-4 justify-content-center mx-auto" style="margin-top: 5em;">
         <h2 v-on:click="onClickTalker">LiveChat From {{ "(" + state_talker + ")" }}</h2>
@@ -353,8 +391,8 @@
           </thead>
           <tbody>
             <tr class="table-dark" v-for="item in detail_info.reports.tables.top_chat_list">
-              <td><a target="_blank"
-                  v-bind:href="'https://www.youtube.com/channel/'+ item.value.user_id">{{ item.key }}</a></td>
+              <td><a target="_blank" v-bind:href="'https://www.youtube.com/channel/'+ item.value.user_id">{{ item.key
+                  }}</a></td>
               <td>{{ getNumberWithCommas(item.value.count_message) }}</td>
             </tr>
           </tbody>
@@ -379,10 +417,11 @@
           <tbody>
             <tr class="table-dark" v-for="item in detail_info.reports.tables.mod_chat_list">
               <td><a target="_blank"
-                  v-bind:href="'https://www.youtube.com/watch?v='+ item.video_id + '&t=' + getPlayTimeNum(item.play_time) ">{{ getNewPlayTime(item.play_time) }}</a>
+                  v-bind:href="'https://www.youtube.com/watch?v='+ item.video_id + '&t=' + getPlayTimeNum(item.play_time) ">{{
+                  getNewPlayTime(item.play_time) }}</a>
               </td>
-              <td><a target="_blank"
-                  v-bind:href="'https://www.youtube.com/channel/'+ item.user_id">{{ item.user_name }}</a></td>
+              <td><a target="_blank" v-bind:href="'https://www.youtube.com/channel/'+ item.user_id">{{ item.user_name
+                  }}</a></td>
               <td>{{ item.content }}</td>
               <td>{{ "¥ " + item.amount_micros }}</td>
             </tr>
@@ -413,7 +452,7 @@
                 <th style="text-align: right;" scope="col">Total Message</th>
                 <th style="text-align: right;" scope="col">Total SuperChat</th>
                 <th style="text-align: right;" scope="col">Total New Member</th>
-  
+
               </tr>
             </thead>
             <tbody>
@@ -421,19 +460,21 @@
                 <td style="text-align: right;">
                   {{ getPlayTimeFromSec(detail_channel_info.totals.total_play_time) }}
                 </td>
-                <td style="text-align: right;">{{ getNumberWithCommas(detail_channel_info.totals.total_video_count) }} </td>
+                <td style="text-align: right;">{{ getNumberWithCommas(detail_channel_info.totals.total_video_count) }}
+                </td>
                 <td style="text-align: right;">
                   {{ getNumberWithCommas(detail_channel_info.totals.total_messages) }}
                 </td>
                 <td style="text-align: right;">
                   {{ getNumberWithCommas(detail_channel_info.totals.total_sc) }}
                 </td>
-                <td style="text-align: right;">{{ getNumberWithCommas(detail_channel_info.totals.total_new_member) }}</td>
+                <td style="text-align: right;">{{ getNumberWithCommas(detail_channel_info.totals.total_new_member) }}
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
-        
+
       </div>
 
       <div class="row col-xl-10 justify-content-center mx-auto" style="margin-top: 1em;">
@@ -448,17 +489,31 @@
 
     </div>
 
-    <div v-if="state == 'about'" class="row justify-content-center mx-auto">
-      
-        <h1>待補..單月全liver統計資訊 (big query practice and slide auto generate)...</h1>
-  
+    <div v-if="state == 'about'" class="row text-center justify-content-center mx-auto">
+      <ol>
+        <ul><a href="https://twitter.com/bot_n7ifans" target="_blank">Twitter</a></ul>
+        <ul><a href="https://n7i-fans.pickoma.com/summary/?yyyy=2020&mm=08" target="_blank">2020-08</a></ul>
+        <ul><a href="https://n7i-fans.pickoma.com/summary/?yyyy=2020&mm=09" target="_blank">2020-09</a></ul>
+        <ul><a href="https://n7i-fans.pickoma.com/summary/?yyyy=2020&mm=10" target="_blank">2020-10</a></ul>
+      </ol>
     </div>
   </div>
 
+  <a href="https://github.com/Kcars/n7i" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;"
+    src="https://camo.githubusercontent.com/652c5b9acfaddf3a9c326fa6bde407b87f7be0f4/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6f72616e67655f6666373630302e706e67"
+    alt="Fork me on GitHub"
+    data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png"></a>
+
   <!-- script block -->
   <script src="./scripts/axios.min.js"></script>
+
   <script src="./scripts/vue.min.js"></script>
-  <script src="./scripts/d3.min.js"></script>
+  <script src="./scripts/vue-router.js"></script>
+
+  <!--<script src="./scripts/d3.min.js"></script>-->
+  <!--<script src="./scripts/d3-cloud.min.js"></script>-->
+
+  <!--<script src="./scripts/wordcloud2.js"></script>-->
   <script src="./scripts/Chart.min.js"></script>
   <script src="./scripts/main.js"></script>
 

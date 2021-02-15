@@ -1,15 +1,24 @@
-
 const is_debug = window.location.href.indexOf("localhost") != -1 || window.location.href.indexOf("127.0.0.1") != -1;
 
+////
+
+let router = new VueRouter({
+    mode: 'history',
+    routes: []
+});
+
 let base = new Vue({
+    router,
     el: "#vue-main",
     data: {
-        video_list: { live: [], upcoming: [], record: [] }
+        video_list: { live: [], upcoming: [], record: [], timestamp: "" }
         , channels: []
         , charts: {}
         , detail_info: {}
+        , words: [["草", 857], ["怖い", 652], ["え", 577], ["ない", 495], ["音", 460], ["波形", 435], ["やばい", 423], ["こわい", 384], ["もう", 360], ["なん", 333], ["様", 330], ["疲れ", 305], ["いい", 288], ["やめ", 274], ["こわ", 272], ["これ", 269], ["それ", 258], ["大丈夫", 245], ["何", 234], ["人", 229], ["そう", 226], ["塩水", 225], ["ましろ", 223], ["人形", 213], ["今", 206], ["方", 203], ["聞こえ", 202], ["気", 186], ["どう", 182], ["1", 179], ["ぱわこ", 179], ["w", 174], ["聞こえる", 157], ["ん", 155], ["風呂場", 151], ["空き巣", 143], ["回", 136], ["やば", 135], ["怖", 134], ["こと", 132], ["マジ", 130], ["階段", 124], ["アナベル", 123], ["生き", 117], ["血", 115], ["静か", 114], ["かわいい", 113], ["声", 113], ["この", 112], ["ガチ", 110], ["2", 109], ["おかえり", 109], ["あ", 107], ["こっわ", 106], ["配信", 104], ["万", 104], ["特定", 103], ["まじ", 101], ["動い", 100], ["家", 97], ["ひとりかくれんぼ", 94], ["俺", 91], ["ほう", 90], ["時間", 89], ["さん", 87], ["聞こえた", 84], ["時", 83], ["やめよう", 80], ["まだ", 79], ["無事", 78], ["よかっ", 77], ["誰", 75], ["いや", 75], ["なに", 75], ["さっき", 72], ["よう", 71], ["ほんと", 71], ["いう", 71], ["ちょっと", 70], ["やめよ", 70], ["えぇ", 68], ["トレンド", 68], ["分", 65], ["マイク", 65], ["怖く", 64], ["ええ", 64], ["その", 64], ["やめとけ", 64], ["木造", 64], ["最後", 63], ["なるほど", 63], ["一", 63], ["霊", 62], ["二", 61], ["すごい", 61], ["家鳴り", 61], ["えっ", 57], ["揺れ", 57], ["幽霊", 56], ["なく", 56]]//[["草", 100], ["おつばね", 76], ["おはようこ", 49], ["ナイス", 31], ["えらい", 31], ["これ", 23], ["すごい", 23], ["いい", 19], ["ゲーム", 18], ["KF", 16], ["スパチャ", 16], ["金", 15], ["そう", 14], ["ない", 14], ["2", 13], ["こんばねー", 12], ["さん", 12], ["配信", 11], ["今", 11], ["待機", 11], ["この", 11], ["武器", 11], ["ハゲ", 11], ["ソロ", 10], ["かわいい", 9], ["ここ", 9], ["気", 9], ["また", 9], ["結構", 8], ["クリスマス", 8], ["札束", 8], ["人", 7], ["透けてる", 7], ["髪", 7], ["ボス", 7], ["葉子ちゃん", 7], ["好き", 7], ["炎", 7], ["きちゃ", 6], ["こんばね", 6], ["ほんと", 6], ["何", 6], ["それ", 6], ["味方", 6], ["消毒", 6], ["みたい", 6], ["FF", 6], ["よかっ", 6], ["ナイフ", 6], ["楽しみ", 6]]
         , detail_channel_info: {}
         , detail_id: ""
+        , detail_title: ""
         , detail_sec: 0
         , state_talker: "User Count"
         , state_scuser: "User Count"
@@ -18,6 +27,8 @@ let base = new Vue({
         , record_sort: "start_time"
         , member_sort: "sub_count"
         , keyword: ""
+        , yyyy: new Date().getFullYear()
+        , mm: new Date().getMonth() + 1
     }
     , methods: {
 
@@ -152,11 +163,74 @@ let base = new Vue({
                 return res;
             });
         }
+    }, mounted: function () {
+        let state = this.$route.query.state;
+        let video_id = this.$route.query.video_id;
+        let channel_id = this.$route.query.channel_id;
+
+        let yyyy = parseInt(this.$route.query.yyyy, 10);
+        let mm = parseInt(this.$route.query.mm, 10);
+
+        this.state = state == "live" ? "live" : this.state;
+        this.state = state == "upcoming" ? "upcoming" : this.state;
+        this.state = state == "record" ? "record" : this.state;
+        this.state = state == "member" ? "member" : this.state;
+        this.state = state == "about" ? "about" : this.state;
+
+        if (yyyy > 0 && mm > 0) {
+            this.yyyy = yyyy;
+            this.mm = mm;
+
+            setTimeout(() => {
+                doLoadRecordInfo();
+            }, 1000);
+        }
+
+        if (state == "detail") {
+            if (video_id != null && video_id != "") {
+                setTimeout(() => {
+                    onClickDetail(video_id, false)
+                }, 1000);
+            }
+        }
+
+        if (state == "channel_detail") {
+            if (channel_id != null && channel_id != "") {
+                setTimeout(() => {
+                    onClickChannelDetail(channel_id);
+                }, 1000); // dirty
+
+            }
+        }
+    }, watch: {
+        state: function () {
+            let new_query = {};
+
+            if (this.state == "detail" || this.state == "channel_detail") {
+                if (this.state == "detail") {
+                    new_query = { query: { state: this.state, video_id: this.detail_id } };
+                } else {
+                    new_query = { query: { state: this.state, channel_id: this.detail_id } };
+                }
+            } else {
+                new_query = { query: { state: this.state } }
+            }
+
+            if (JSON.stringify(new_query.query) != JSON.stringify(this.$route.query)) {
+                this.$router.replace(new_query);
+            }
+        },
+        keyword: function () {
+            if (this.keyword == "!keyword") {
+                this.keyword = "";
+            }
+        }
     }
 });
 
 const user_list = [
     "UCX7YkU9nEeaoZbkVLVajcMg" // にじさんじ
+
     , "UCD-miitqNY3nyukJ4Fnf4_A" // 月ノ美兎
     , "UCLO9QDxVL4bnvRRsz6K4bsQ" // 勇気ちひろ
     , "UCYKP16oMX9KKPbrNgo_Kgag" // える
@@ -286,7 +360,7 @@ const user_list = [
     , "UCo2N7C-Z91waaR6lF3LL_jw" // 甲斐田晴
 
     , "UC_82HBGtvwN1hcGeOGHzUBQ" // 空星きらめ
-    , "UC69URn8iP4u8D_zUp-IJ1sg" // 金魚坂めいろ
+    //  , "UC69URn8iP4u8D_zUp-IJ1sg" // 金魚坂めいろ
 
     , "UCe_p3YEuYJb8Np0Ip9dk-FQ" // 朝日南アカネ
     , "UCL_O_HXgLJx3Auteer0n0pA" // 周央 サンゴ
@@ -294,7 +368,7 @@ const user_list = [
     , "UCRqBKoKuX30ruKAq05pCeRQ" // 北小路ヒスイ 
     , "UCkngxfPbmGyGl_RIq4FA3MQ" // 西園チグサ
 ];
- 
+
 function secondsToHms(d) {
     d = Number(d);
     let h = Math.floor(d / 3600);
@@ -395,7 +469,7 @@ function doLoadVideoInfo() {
 
     axios.get(path).then((res) => {
         if (base.video_list.live.length > 0 && base.video_list.live.length != res.data.live.length) {
-            console.log(`[NOTICE] live list change. reload record.ndjson.`) ;
+            console.log(`[NOTICE] live list change. reload record.ndjson.`);
 
             doLoadRecordInfo();
         }
@@ -407,12 +481,13 @@ function doLoadVideoInfo() {
 }
 
 function doLoadRecordInfo() {
-    let yy = new Date().getFullYear();
-    let mm = new Date().getMonth() + 1;
+    let y = base.yyyy;
+    let m = base.mm;
+
     let path = '';
 
-    mm = mm < 10 ? `0${mm}` : mm;
-    path = `./stats/records-${yy}${mm}.ndjson`;
+    m = m < 10 ? `0${m}` : m;
+    path = `./stats/records-${y}${m}.ndjson`;
 
     axios.get(path).then((res) => {
         let nd = res.data;
@@ -458,19 +533,16 @@ function doLoadChannelInfo() {
     })
 }
 
-////
-
 function onClickDetail(video_id) {
-
     video_id = is_debug ? "cQrcd8yVOlY" : video_id;
 
-    let yyyy = new Date().getFullYear();
-    let mm = new Date().getMonth() + 1;
+    let yyyy = base.yyyy;
+    let mm = base.mm;
     let yyyymm = '';
 
     mm = mm < 10 ? `0${mm}` : mm;
     yyyymm = `${yyyy}${mm}`;
-    yyyymm = is_debug ? "202009" : yyyymm;
+    yyyymm = is_debug ? "202010" : yyyymm;
 
     let url_reports = `./reports/${yyyymm}/${video_id}.json`;
 
@@ -502,9 +574,11 @@ function onClickDetail(video_id) {
 
 }
 
-function onClickChannelDetail(channel_id, channel_name) {
+function onClickChannelDetail(channel_id) {
 
     channel_id = is_debug ? "UCoztvTULBYd3WmStqYeoHcA" : channel_id;
+
+    let channel_name = getChannelName(channel_id);
 
     let url_stats = `./reports/${channel_id}.json`;
 
@@ -589,6 +663,16 @@ function onClickSCUser(a, b) {
 
         base.charts.scuser.update();
     }
+}
+
+function getChannelName(channel_id) {
+    let res = "";
+    base.channels.forEach((channel) => {
+        if (channel.channel_id == channel_id) {
+            res = channel.channel_name;
+        }
+    })
+    return res;
 }
 
 doLoadVideoInfo();
